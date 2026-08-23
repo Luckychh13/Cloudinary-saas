@@ -1,7 +1,6 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { CldImage } from 'next-cloudinary';
-
 
 const socialFormats = {
   "Instagram Square (1:1)": { width: 1080, height: 1080, aspectRatio: "1:1" },
@@ -34,12 +33,6 @@ export default function SocialShare() {
   const [isTransforming, setIsTransforming] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
 
-  useEffect(() => {
-    if(uploadImage){
-      setIsTransforming(true)
-    }
-  },[selectedFormat,uploadImage])
-
   const handleFileUpload = async (event:React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if(!file) return
@@ -55,8 +48,9 @@ export default function SocialShare() {
       if(!response.ok) throw new Error("failed to upload image")
 
       const data = await response.json()
-      setUploadImage(data.publicId) 
-    } catch (error) {
+      setIsTransforming(true)
+      setUploadImage(data.publicId)
+    } catch {
       alert("Failed to Upload image")
     }finally{
       setIsUploading(false)
@@ -71,13 +65,16 @@ export default function SocialShare() {
      .then((blob) => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
+        const formatName = selectedFormat
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
         link.href = url
-        link.download = "image.png"
+        link.download = `${formatName}-${Date.now()}.png`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
-        document.body.removeChild(link)
      })
   }
   
@@ -114,9 +111,10 @@ export default function SocialShare() {
                     <select
                       className="select select-bordered w-full"
                       value={selectedFormat}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        setIsTransforming(true)
                         setSelectedFormat(e.target.value as SocialFormat)
-                      }
+                      }}
                     >
                       {Object.keys(socialFormats).map((format) => (
                         <option key={format} value={format}>
@@ -141,7 +139,6 @@ export default function SocialShare() {
                         sizes="100vw"
                         alt="transformed image"
                         crop='fill'
-                        aspectRatio={socialFormats[selectedFormat].aspectRatio}
                         gravity="auto"
                         ref={imageRef}
                         onLoad={() => setIsTransforming(false)}
