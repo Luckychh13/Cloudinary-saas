@@ -15,13 +15,7 @@ const isPublicApiRoute = createRouteMatcher([
 export default clerkMiddleware(
   async (auth, req) => {
     const { userId } = await auth()
-    const currentUrl = new URL(req.url)
-    const isAccessingDashBoard = currentUrl.pathname === '/home'
-    const isApiRequest = currentUrl.pathname.startsWith('/api')
-
-    if(userId && !isAccessingDashBoard && isPublicApiRoute(req)){
-        return NextResponse.redirect(new URL('/home', req.url))
-    }
+    const isApiRequest = req.nextUrl.pathname.startsWith('/api')
 
     if(!userId){
         
